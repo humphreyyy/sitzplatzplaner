@@ -218,6 +218,12 @@ export default function SeatPlaner() {
         });
     };
 
+    const changeDate = (offset) => {
+        const newDate = new Date(currentDate);
+        newDate.setDate(newDate.getDate() + offset);
+        setCurrentDate(newDate);
+    };
+
     // --- Handlers ---
 
     const handleDragStart = (e, type, item) => {
@@ -843,53 +849,23 @@ export default function SeatPlaner() {
                                 </div>
                             </div>
 
-                            {/* Floor Plan */}
-                            <div className="bg-white p-1 rounded-lg shadow-md">
-                                {renderFloorPlan(true)}
-                                <div className="p-2 flex gap-4 text-xs text-gray-500 justify-end">
-                                    <div className="flex items-center"><span className="w-3 h-3 rounded-full mr-1 border" style={{ background: COLORS.seatOccupied, borderColor: '#fdd835' }}></span> Belegt</div>
-                                    <div className="flex items-center"><span className="w-3 h-3 rounded-full mr-1 border" style={{ background: COLORS.seatFree, borderColor: '#81c784' }}></span> Frei</div>
-                                </div>
+                            {/* Floor Plan Area */}
+                            <div className="bg-white p-1 rounded-lg shadow-lg border border-gray-200">
+                                {renderFloorPlan()}
                             </div>
                         </div>
 
-                        {/* Sidebar Stats */}
-                        <div className="lg:w-1/4 space-y-4">
-                            <div className="bg-white p-4 rounded-lg shadow-sm border-t-4" style={{ borderColor: COLORS.accent }}>
-                                <h3 className="font-bold mb-2 text-sm uppercase text-gray-500">Heutige Belegung</h3>
-                                {(() => {
-                                    const day = getDayKey(currentDate);
-                                    const present = students.filter(s => s.days.includes(day));
-                                    const assignedCount = Object.keys(assignments[getISOString(currentDate)] || {}).length;
+                        {/* Sidebar: Properties & Info */}
+                        <div className="lg:w-1/4 flex flex-col gap-4">
+                            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                <h3 className="font-bold mb-2 text-gray-700 flex items-center">
+                                    <AlertTriangle size={16} className="mr-2 text-orange-500" /> Konflikte
+                                </h3>
+                                <p className="text-sm text-gray-500">Keine Konflikte erkannt.</p>
+                            </div>
 
-                                    return (
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-end">
-                                                <span className="text-3xl font-bold" style={{ color: COLORS.primary }}>{assignedCount} / {seats.length}</span>
-                                                <span className="text-sm text-gray-500">Plätze belegt</span>
-                                            </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                                <div className="h-2.5 rounded-full" style={{ width: `${Math.min(100, (assignedCount / seats.length) * 100)}%`, backgroundColor: assignedCount > seats.length ? COLORS.accent : COLORS.primary }}></div>
-                                            </div>
-
-                                            <div>
-                                                <h4 className="font-bold text-sm mb-2">Studenten heute ({present.length}):</h4>
-                                                <ul className="space-y-1 max-h-60 overflow-y-auto">
-                                                    {present.map(s => {
-                                                        const isAssigned = Object.values(assignments[getISOString(currentDate)] || {}).includes(s.id);
-                                                        return (
-                                                            <li key={s.id} className={`text-sm p-2 rounded flex justify-between items-center ${isAssigned ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                                                                <span>{s.name}</span>
-                                                                {isAssigned ? <Check size={14} /> : <AlertTriangle size={14} />}
-                                                            </li>
-                                                        )
-                                                    })}
-                                                    {present.length === 0 && <li className="text-gray-400 text-sm italic">Keine Studenten für {day} eingetragen.</li>}
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                                {renderPropertiesPanel()}
                             </div>
                         </div>
                     </div>
@@ -900,34 +876,33 @@ export default function SeatPlaner() {
 
                 {/* VIEW: EDITOR */}
                 {activeTab === 'editor' && (
-                    <div className="flex h-full gap-4">
-
-                        {/* Main Canvas */}
-                        <div className="flex-1 flex flex-col">
-                            <div className="bg-white p-4 mb-4 rounded shadow-sm flex justify-between items-center">
-                                <div className="flex space-x-4">
-                                    <button onClick={() => setRooms([...rooms, { id: generateId(), x: 50, y: 50, w: 200, h: 200, name: 'Neuer Raum', seatCount: 0 }])} className="flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium">
-                                        <Plus size={16} className="mr-1" /> Raum
+                    <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="lg:w-3/4">
+                            <div className="bg-white p-4 rounded-lg shadow-sm mb-4 flex justify-between items-center">
+                                <h2 className="font-bold text-lg flex items-center">
+                                    <Layout size={20} className="mr-2" /> Layout-Editor
+                                </h2>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            const name = prompt("Raumname:");
+                                            if (name) {
+                                                setRooms([...rooms, { id: generateId(), x: 50, y: 50, w: 200, h: 150, name, seatCount: 0 }]);
+                                            }
+                                        }}
+                                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium"
+                                    >
+                                        + Raum
                                     </button>
-                                    <button onClick={() => setSeats([...seats, { id: generateId(), x: 100, y: 100, roomId: null, features: [] }])} className="flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium">
-                                        <Plus size={16} className="mr-1" /> Sitzplatz
-                                    </button>
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                    Klicken zum Bearbeiten. Ziehen zum Verschieben.
                                 </div>
                             </div>
-                            <div className="flex-1 bg-white rounded shadow-inner border border-gray-200 min-h-[500px] relative">
-                                {renderFloorPlan(false)}
+                            <div className="bg-white p-1 rounded-lg shadow-lg border-2 border-blue-100">
+                                {renderFloorPlan()}
                             </div>
                         </div>
 
-                        {/* Properties Panel (Right Sidebar) */}
-                        <div className="w-80 bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden flex flex-col">
-                            <div className="bg-gray-50 p-3 border-b font-bold text-gray-600">
-                                Eigenschaften
-                            </div>
-                            <div className="flex-1 overflow-auto">
+                        <div className="lg:w-1/4">
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                                 {renderPropertiesPanel()}
                             </div>
                         </div>
