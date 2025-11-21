@@ -91,6 +91,7 @@ export default function SeatPlaner() {
     const [selectionType, setSelectionType] = useState(null); // 'room' or 'seat'
 
     const [draggedItem, setDraggedItem] = useState(null);
+    const [resizing, setResizing] = useState(null); // { roomId, handle, startX, startY, startW, startH, startRoomX, startRoomY }
     const [printMode, setPrintMode] = useState(false);
 
     // --- Persistence ---
@@ -259,6 +260,78 @@ export default function SeatPlaner() {
         setDraggedItem(null);
     };
 
+    // --- Resizing Logic ---
+
+    const handleResizeStart = (e, room, handle) => {
+        e.stopPropagation(); // Prevent drag start
+        setResizing({
+            roomId: room.id,
+            handle,
+            startX: e.clientX,
+            startY: e.clientY,
+            startW: room.w,
+            startH: room.h,
+            startRoomX: room.x,
+            startRoomY: room.y
+        });
+    };
+
+    useEffect(() => {
+        const handleResizeMove = (e) => {
+            if (!resizing) return;
+
+            const deltaX = e.clientX - resizing.startX;
+            const deltaY = e.clientY - resizing.startY;
+
+            let newW = resizing.startW;
+            let newH = resizing.startH;
+            let newX = resizing.startRoomX;
+            let newY = resizing.startRoomY;
+
+            // Minimum size
+            const minSize = 50;
+
+            if (resizing.handle.includes('e')) {
+                newW = Math.max(minSize, resizing.startW + deltaX);
+            }
+            if (resizing.handle.includes('w')) {
+                const proposedW = resizing.startW - deltaX;
+                if (proposedW >= minSize) {
+                    newW = proposedW;
+                    newX = resizing.startRoomX + deltaX;
+                }
+            }
+            if (resizing.handle.includes('s')) {
+                newH = Math.max(minSize, resizing.startH + deltaY);
+            }
+            if (resizing.handle.includes('n')) {
+                const proposedH = resizing.startH - deltaY;
+                if (proposedH >= minSize) {
+                    newH = proposedH;
+                    newY = resizing.startRoomY + deltaY;
+                }
+            }
+
+            setRooms(rooms.map(r => r.id === resizing.roomId ? { ...r, x: newX, y: newY, w: newW, h: newH } : r));
+        };
+
+        const handleResizeEnd = () => {
+            if (resizing) {
+                setResizing(null);
+            }
+        };
+
+        if (resizing) {
+            window.addEventListener('mousemove', handleResizeMove);
+            window.addEventListener('mouseup', handleResizeEnd);
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', handleResizeMove);
+            window.removeEventListener('mouseup', handleResizeEnd);
+        };
+    }, [resizing, rooms]);
+
     const handleSeatClick = (seatId) => {
         if (activeTab === 'editor') {
             setSelectedId(seatId);
@@ -330,6 +403,27 @@ export default function SeatPlaner() {
                                 onChange={(e) => handleRoomUpdate(room.id, 'name', e.target.value)}
                                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
                             />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Breite (px)</label>
+                                <input
+                                    type="number"
+                                    value={room.w}
+                                    onChange={(e) => handleRoomUpdate(room.id, 'w', parseInt(e.target.value) || 50)}
+                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Höhe (px)</label>
+                                <input
+                                    type="number"
+                                    value={room.h}
+                                    onChange={(e) => handleRoomUpdate(room.id, 'h', parseInt(e.target.value) || 50)}
+                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                            </div>
                         </div>
 
                         <div>
@@ -453,6 +547,26 @@ export default function SeatPlaner() {
                                 <span>{room.name}</span>
                                 <span className="text-xs font-normal opacity-50">{seats.filter(s => s.roomId === room.id).length} Plätze</span>
                             </div>
+
+                            {isSelected && !readOnly && (
+                                <>
+                                    {/* Resize Handles */}
+                                    {['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'].map(handle => (
+                                        <div
+                                            key={handle}
+                                            onMouseDown={(e) => handleResizeStart(e, room, handle)}
+                                            className="absolute bg-blue-500 border border-white w-3 h-3 rounded-full z-20"
+                                            style={{
+                                                cursor: `${handle}-resize`,
+                                                top: handle.includes('n') ? -6 : handle.includes('s') ? '100%' : '50%',
+                                                left: handle.includes('w') ? -6 : handle.includes('e') ? '100%' : '50%',
+                                                transform: 'translate(-50%, -50%)',
+                                                marginTop: handle.includes('s') ? 0 : 0 // Adjustment if needed
+                                            }}
+                                        />
+                                    ))}
+                                </>
+                            )}
                         </div>
                     );
                 })}
