@@ -88,7 +88,7 @@ export default function SeatPlaner() {
 
     // Selection State for Editor
     const [selectedId, setSelectedId] = useState(null); // ID of room or seat
-    const [selectionType, setSelectionType] = useState(null); // 'room' or 'seat'
+    const [selectionType, setSelectionType] = useState(null); // 'room' or 'seat' or 'seat-assignment'
 
     const [draggedItem, setDraggedItem] = useState(null);
     const [resizing, setResizing] = useState(null); // { roomId, handle, startX, startY, startW, startH, startRoomX, startRoomY }
@@ -346,30 +346,8 @@ export default function SeatPlaner() {
         }
 
         // Planning Logic
-        const dateKey = getISOString(currentDate);
-        const dayOfWeek = getDayKey(currentDate);
-        const currentAssignedStudentId = assignments[dateKey]?.[seatId];
-        const presentStudents = students.filter(s => s.days && s.days.includes(dayOfWeek));
-        const assignedStudentIds = Object.values(assignments[dateKey] || {});
-        const availableStudents = presentStudents.filter(s => !assignedStudentIds.includes(s.id));
-
-        if (availableStudents.length === 0 && !currentAssignedStudentId) {
-            alert("Keine weiteren Studenten verfügbar.");
-            return;
-        }
-
-        if (currentAssignedStudentId) {
-            const newDay = { ...(assignments[dateKey] || {}) };
-            delete newDay[seatId];
-            setAssignments({ ...assignments, [dateKey]: newDay });
-        } else {
-            if (availableStudents.length > 0) {
-                const student = availableStudents[0];
-                const newDay = { ...(assignments[dateKey] || {}) };
-                newDay[seatId] = student.id;
-                setAssignments({ ...assignments, [dateKey]: newDay });
-            }
-        }
+        setSelectedId(seatId);
+        setSelectionType('seat-assignment');
     };
 
     const handleRoomClick = (room) => {
@@ -509,6 +487,83 @@ export default function SeatPlaner() {
                 </div>
             );
         }
+
+        if (selectionType === 'seat-assignment') {
+            const seat = seats.find(s => s.id === selectedId);
+            if (!seat) return null;
+
+            const dateKey = getISOString(currentDate);
+            const dayOfWeek = getDayKey(currentDate);
+            const currentAssignedStudentId = assignments[dateKey]?.[seat.id];
+            const currentStudent = students.find(s => s.id === currentAssignedStudentId);
+
+            // Filter students who are present today AND not assigned to another seat
+            const presentStudents = students.filter(s => s.days && s.days.includes(dayOfWeek));
+            const assignedStudentIds = Object.values(assignments[dateKey] || {});
+            const availableStudents = presentStudents.filter(s =>
+                !assignedStudentIds.includes(s.id) || s.id === currentAssignedStudentId
+            );
+
+            const assignStudent = (studentId) => {
+                const newDay = { ...(assignments[dateKey] || {}) };
+                if (studentId) {
+                    newDay[seat.id] = studentId;
+                } else {
+                    delete newDay[seat.id];
+                }
+                setAssignments({ ...assignments, [dateKey]: newDay });
+            };
+
+            return (
+                <div className="p-4">
+                    <h3 className="text-lg font-bold mb-4 border-b pb-2 flex items-center" style={{ color: COLORS.primary }}>
+                        <Users size={18} className="mr-2" /> Platz-Zuweisung
+                    </h3>
+
+                    <div className="mb-4 p-3 bg-gray-50 rounded border">
+                        <div className="text-xs text-gray-500 mb-1">Aktuell zugewiesen:</div>
+                        {currentStudent ? (
+                            <div className="flex justify-between items-center">
+                                <span className="font-bold text-green-700">{currentStudent.name}</span>
+                                <button
+                                    onClick={() => assignStudent(null)}
+                                    className="text-red-500 hover:text-red-700 text-xs border border-red-200 px-2 py-1 rounded bg-white"
+                                >
+                                    Entfernen
+                                </button>
+                            </div>
+                        ) : (
+                            <span className="text-gray-400 italic">Leer</span>
+                        )}
+                    </div>
+
+                    <h4 className="font-bold text-sm mb-2">Verfügbare Studenten</h4>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {availableStudents.length === 0 ? (
+                            <p className="text-sm text-gray-400">Keine Studenten verfügbar.</p>
+                        ) : (
+                            availableStudents.map(student => {
+                                const isAssignedHere = student.id === currentAssignedStudentId;
+                                return (
+                                    <button
+                                        key={student.id}
+                                        onClick={() => assignStudent(student.id)}
+                                        disabled={isAssignedHere}
+                                        className={`w-full text-left p-2 rounded border flex justify-between items-center ${isAssignedHere
+                                                ? 'bg-green-50 border-green-200 text-green-800 cursor-default'
+                                                : 'hover:bg-blue-50 hover:border-blue-300'
+                                            }`}
+                                    >
+                                        <span>{student.name}</span>
+                                        {isAssignedHere && <Check size={14} />}
+                                    </button>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            );
+        }
     };
 
     const renderFloorPlan = (readOnly = false) => {
@@ -521,7 +576,12 @@ export default function SeatPlaner() {
                 style={{ width: '100%', height: '500px', cursor: readOnly ? 'default' : 'default' }}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
-                onClick={() => { if (activeTab === 'editor') { setSelectedId(null); setSelectionType(null); } }}
+                onClick={() => {
+                    if (activeTab === 'editor' || activeTab === 'plan') {
+                        setSelectedId(null);
+                        setSelectionType(null);
+                    }
+                }}
             >
                 {/* Grid Background */}
                 <div className="absolute inset-0 opacity-10 pointer-events-none"
@@ -530,7 +590,7 @@ export default function SeatPlaner() {
 
                 {/* Rooms */}
                 {rooms.map(room => {
-                    const isSelected = activeTab === 'editor' && selectedId === room.id;
+                    const isSelected = (activeTab === 'editor' || activeTab === 'plan') && selectedId === room.id;
                     return (
                         <div
                             key={room.id}
@@ -554,7 +614,7 @@ export default function SeatPlaner() {
                                 <span className="text-xs font-normal opacity-50">{seats.filter(s => s.roomId === room.id).length} Plätze</span>
                             </div>
 
-                            {isSelected && !readOnly && (
+                            {isSelected && !readOnly && activeTab === 'editor' && (
                                 <>
                                     {/* Resize Handles */}
                                     {['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'].map(handle => (
@@ -581,7 +641,7 @@ export default function SeatPlaner() {
                 {seats.map(seat => {
                     const studentId = dayAssignments[seat.id];
                     const student = students.find(s => s.id === studentId);
-                    const isSelected = activeTab === 'editor' && selectedId === seat.id;
+                    const isSelected = (activeTab === 'editor' || activeTab === 'plan') && selectedId === seat.id;
 
                     let bgColor = COLORS.seatFree;
                     let borderColor = '#81c784';
