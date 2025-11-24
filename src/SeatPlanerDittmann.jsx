@@ -95,21 +95,39 @@ export default function SeatPlaner() {
     const [printMode, setPrintMode] = useState(false);
 
     // --- Persistence ---
-    useEffect(() => {
-        const savedData = localStorage.getItem('dittmann_seatplaner_v2');
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            setRooms(data.rooms || []);
-            setSeats(data.seats || []);
-            setStudents(data.students || []);
-            setAssignments(data.assignments || {});
-        }
-    }, []);
+    const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
+        fetch('/api/data')
+            .then(res => res.json())
+            .then(data => {
+                setRooms(data.rooms || []);
+                setSeats(data.seats || []);
+                setStudents(data.students || []);
+                setAssignments(data.assignments || {});
+                setLoaded(true);
+            })
+            .catch(err => console.error('Error fetching data:', err));
+    }, []);
+
+    const firstSave = useRef(true);
+
+    useEffect(() => {
+        if (!loaded) return;
+
+        // Skip the first save after loading (which is just the initial state being "restored")
+        if (firstSave.current) {
+            firstSave.current = false;
+            return;
+        }
+
         const data = { rooms, seats, students, assignments };
-        localStorage.setItem('dittmann_seatplaner_v2', JSON.stringify(data));
-    }, [rooms, seats, students, assignments]);
+        fetch('/api/data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).catch(err => console.error('Error saving data:', err));
+    }, [rooms, seats, students, assignments, loaded]);
 
     // --- Logic: Room & Seat Management ---
 

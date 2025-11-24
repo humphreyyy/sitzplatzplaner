@@ -1,0 +1,16 @@
+{
+  "rooms": [],
+  "seats": [],
+  "students": [
+    {
+      "id": "o7wggcvmu",
+      "name": "Test Student",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr"
+      ]
+    }
+  ],
+  "assignments": {}
+}
