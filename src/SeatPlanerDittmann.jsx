@@ -21,6 +21,7 @@ import {
     Sun,
     ArrowUp
 } from 'lucide-react';
+import { fetchData, saveData } from './apiService';
 
 // --- Constants & Styles ---
 
@@ -98,9 +99,13 @@ export default function SeatPlaner() {
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
-        fetch('/api/data')
-            .then(res => res.json())
+        fetchData()
             .then(data => {
+                // Handle potential error from IPC
+                if (data.error) {
+                    console.error(data.error);
+                    return;
+                }
                 setRooms(data.rooms || []);
                 setSeats(data.seats || []);
                 setStudents(data.students || []);
@@ -122,11 +127,11 @@ export default function SeatPlaner() {
         }
 
         const data = { rooms, seats, students, assignments };
-        fetch('/api/data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        }).catch(err => console.error('Error saving data:', err));
+
+        // Use the service wrapper
+        saveData(data)
+            .catch(err => console.error('Error saving data:', err));
+
     }, [rooms, seats, students, assignments, loaded]);
 
     // --- Logic: Room & Seat Management ---
