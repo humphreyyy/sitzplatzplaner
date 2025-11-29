@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { loadData as apiLoadData, saveData as apiSaveData } from './services/dataService';
 import {
     Layout,
     Users,
@@ -99,18 +100,15 @@ export default function SeatPlaner() {
 
     // --- Persistence ---
     useEffect(() => {
-        const loadData = async () => {
+        const fetchData = async () => {
             try {
-                const response = await fetch('/api/data');
-                if (response.ok) {
-                    const data = await response.json();
-                    // Only update state if we got valid data back
-                    if (data) {
-                        setRooms(data.rooms || []);
-                        setSeats(data.seats || []);
-                        setStudents(data.students || []);
-                        setAssignments(data.assignments || {});
-                    }
+                const data = await apiLoadData();
+                // Only update state if we got valid data back
+                if (data) {
+                    setRooms(data.rooms || []);
+                    setSeats(data.seats || []);
+                    setStudents(data.students || []);
+                    setAssignments(data.assignments || {});
                 }
             } catch (error) {
                 console.error("Failed to load data:", error);
@@ -118,27 +116,23 @@ export default function SeatPlaner() {
                 setIsLoaded(true);
             }
         };
-        loadData();
+        fetchData();
     }, []);
 
     useEffect(() => {
         if (!isLoaded) return;
 
-        const saveData = async () => {
+        const persistData = async () => {
             const data = { rooms, seats, students, assignments };
             try {
-                await fetch('/api/data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
+                await apiSaveData(data);
             } catch (error) {
                 console.error("Failed to save data:", error);
             }
         };
 
         // Debounce save
-        const timeoutId = setTimeout(saveData, 1000);
+        const timeoutId = setTimeout(persistData, 1000);
         return () => clearTimeout(timeoutId);
     }, [rooms, seats, students, assignments, isLoaded]);
 
