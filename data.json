@@ -8,6 +8,15 @@
       "h": 150,
       "name": "Test",
       "seatCount": "2"
+    },
+    {
+      "id": "8nlpbm72g",
+      "x": 381,
+      "y": 87,
+      "w": 200,
+      "h": 150,
+      "name": "xd",
+      "seatCount": 0
     }
   ],
   "seats": [

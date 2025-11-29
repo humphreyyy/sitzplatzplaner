@@ -139,7 +139,7 @@ const FloorPlan = ({
     return (
         <div
             className="relative bg-white border-2 border-gray-200 overflow-hidden shadow-inner"
-            style={{ width: '100%', height: '500px', cursor: readOnly ? 'default' : 'default' }}
+            style={{ width: '100%', height: '100%', cursor: readOnly ? 'default' : 'default' }}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onClick={() => {
