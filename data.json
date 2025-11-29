@@ -1,6 +1,31 @@
 {
-  "rooms": [],
-  "seats": [],
+  "rooms": [
+    {
+      "id": "gmg0qhy4z",
+      "x": 30,
+      "y": 42,
+      "w": 200,
+      "h": 150,
+      "name": "Test",
+      "seatCount": "2"
+    }
+  ],
+  "seats": [
+    {
+      "id": "26hv26e8a",
+      "x": 60,
+      "y": 82,
+      "roomId": "gmg0qhy4z",
+      "features": []
+    },
+    {
+      "id": "si00vh17z",
+      "x": 130,
+      "y": 82,
+      "roomId": "gmg0qhy4z",
+      "features": []
+    }
+  ],
   "students": [
     {
       "id": "o7wggcvmu",
@@ -10,7 +35,41 @@
         "Mi",
         "Fr"
       ]
+    },
+    {
+      "id": "zv83u38s2",
+      "name": "sdfsd",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr"
+      ]
+    },
+    {
+      "id": "0oa1bh3if",
+      "name": "asdasd",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr"
+      ]
+    },
+    {
+      "id": "tlgjfi0ks",
+      "name": "test",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr",
+        "Di",
+        "Do"
+      ]
     }
   ],
-  "assignments": {}
+  "assignments": {
+    "2025-12-01": {
+      "26hv26e8a": "o7wggcvmu",
+      "si00vh17z": "zv83u38s2"
+    }
+  }
 }

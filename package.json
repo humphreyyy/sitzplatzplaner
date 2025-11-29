@@ -2,7 +2,7 @@
   "name": "seat-planer-dittmann",
   "private": true,
   "version": "1.0.0",
-  "main": "electron/main.js",
+  "main": "electron/main.cjs",
   "description": "Sitzplatzplaner Dittmann+Ingenieure",
   "author": "Dittmann",
   "type": "module",

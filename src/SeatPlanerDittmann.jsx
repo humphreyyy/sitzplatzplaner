@@ -93,6 +93,8 @@ export default function SeatPlaner() {
 
     const [draggedItem, setDraggedItem] = useState(null);
     const [resizing, setResizing] = useState(null); // { roomId, handle, startX, startY, startW, startH, startRoomX, startRoomY }
+    const [showAddRoomModal, setShowAddRoomModal] = useState(false);
+    const [newRoomName, setNewRoomName] = useState('');
     const [printMode, setPrintMode] = useState(false);
 
     // --- Persistence ---
@@ -968,10 +970,8 @@ export default function SeatPlaner() {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => {
-                                            const name = prompt("Raumname:");
-                                            if (name) {
-                                                setRooms([...rooms, { id: generateId(), x: 50, y: 50, w: 200, h: 150, name, seatCount: 0 }]);
-                                            }
+                                            setNewRoomName('');
+                                            setShowAddRoomModal(true);
                                         }}
                                         className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium"
                                     >
@@ -994,6 +994,53 @@ export default function SeatPlaner() {
                 )}
 
             </main>
+
+            {/* Add Room Modal */}
+            {showAddRoomModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-xl w-96">
+                        <h3 className="font-bold text-lg mb-4">Neuen Raum hinzufügen</h3>
+                        <input
+                            autoFocus
+                            type="text"
+                            value={newRoomName}
+                            onChange={e => setNewRoomName(e.target.value)}
+                            placeholder="Raumname (z.B. Büro 101)"
+                            className="border p-2 rounded w-full mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                    if (newRoomName.trim()) {
+                                        setRooms([...rooms, { id: generateId(), x: 50, y: 50, w: 200, h: 150, name: newRoomName, seatCount: 0 }]);
+                                        setNewRoomName('');
+                                        setShowAddRoomModal(false);
+                                    }
+                                }
+                                if (e.key === 'Escape') setShowAddRoomModal(false);
+                            }}
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button 
+                                onClick={() => setShowAddRoomModal(false)} 
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+                            >
+                                Abbrechen
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    if (newRoomName.trim()) {
+                                        setRooms([...rooms, { id: generateId(), x: 50, y: 50, w: 200, h: 150, name: newRoomName, seatCount: 0 }]);
+                                        setNewRoomName('');
+                                        setShowAddRoomModal(false);
+                                    }
+                                }}
+                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            >
+                                Hinzufügen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
