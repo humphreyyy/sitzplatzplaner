@@ -23,6 +23,14 @@ const FloorPlan = ({
     const dateKey = getISOString(currentDate);
     const dayAssignments = assignments[dateKey] || {};
 
+    // Calculate content size
+    const contentHeight = Math.max(
+        ...rooms.map(r => r.y + r.h),
+        ...seats.map(s => s.y + 60), // Seats are 60x60
+        0
+    );
+    const minHeight = Math.max(500, contentHeight + 100);
+
     // --- Drag & Drop Handlers ---
 
     const handleDragStart = (e, type, item) => {
@@ -139,7 +147,7 @@ const FloorPlan = ({
     return (
         <div
             className="relative bg-white border-2 border-gray-200 overflow-hidden shadow-inner"
-            style={{ width: '100%', height: '500px', cursor: readOnly ? 'default' : 'default' }}
+            style={{ width: '100%', height: '100%', minHeight: `${minHeight}px`, cursor: readOnly ? 'default' : 'default' }}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onClick={() => {
