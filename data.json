@@ -1,0 +1,156 @@
+{
+  "rooms": [
+    {
+      "id": "132xxayc6",
+      "x": 46,
+      "y": 34,
+      "w": 200,
+      "h": 150,
+      "name": "Test Room 2",
+      "seatCount": "2"
+    },
+    {
+      "id": "8j3nxcb62",
+      "x": 313,
+      "y": 47,
+      "w": 200,
+      "h": 150,
+      "name": "ku",
+      "seatCount": "2"
+    }
+  ],
+  "seats": [
+    {
+      "id": "ggvlnvjgm",
+      "x": 75,
+      "y": 99,
+      "roomId": "132xxayc6",
+      "features": []
+    },
+    {
+      "id": "3kmi74ljd",
+      "x": 146,
+      "y": 99,
+      "roomId": "132xxayc6",
+      "features": [
+        "dual_monitor"
+      ]
+    },
+    {
+      "id": "ci0yzukdy",
+      "x": 342,
+      "y": 116,
+      "roomId": "8j3nxcb62",
+      "features": []
+    },
+    {
+      "id": "twoay0f44",
+      "x": 413,
+      "y": 104,
+      "roomId": "8j3nxcb62",
+      "features": []
+    }
+  ],
+  "students": [
+    {
+      "id": "efv842um3",
+      "name": "suia",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr",
+        "Di",
+        "Do"
+      ]
+    },
+    {
+      "id": "mcjv7n2e9",
+      "name": "sad",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr",
+        "Do"
+      ]
+    },
+    {
+      "id": "3vim967bb",
+      "name": "dfg",
+      "days": [
+        "Fr",
+        "Di",
+        "Mi"
+      ]
+    },
+    {
+      "id": "rsjuqqlhu",
+      "name": "dddd",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr",
+        "Di"
+      ]
+    },
+    {
+      "id": "x2yiwevjq",
+      "name": "dfgdg",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr"
+      ]
+    },
+    {
+      "id": "npsyvig0c",
+      "name": "Student A",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr"
+      ]
+    },
+    {
+      "id": "ipn7g0ta1",
+      "name": "Student B",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr"
+      ]
+    },
+    {
+      "id": "uo04y3kk8",
+      "name": "Student C",
+      "days": [
+        "Mo",
+        "Mi",
+        "Fr"
+      ]
+    }
+  ],
+  "assignments": {
+    "2025-11-30": {
+      "ggvlnvjgm": "efv842um3",
+      "3kmi74ljd": "mcjv7n2e9",
+      "ci0yzukdy": "rsjuqqlhu"
+    },
+    "2025-12-01": {
+      "ggvlnvjgm": "efv842um3",
+      "ci0yzukdy": "rsjuqqlhu",
+      "3kmi74ljd": "mcjv7n2e9",
+      "twoay0f44": "x2yiwevjq"
+    },
+    "2025-12-02": {
+      "ggvlnvjgm": "efv842um3",
+      "3kmi74ljd": "mcjv7n2e9",
+      "ci0yzukdy": "3vim967bb",
+      "twoay0f44": "rsjuqqlhu"
+    },
+    "2025-12-03": {
+      "ggvlnvjgm": "efv842um3",
+      "3kmi74ljd": "mcjv7n2e9"
+    },
+    "2025-11-29": {}
+  }
+}

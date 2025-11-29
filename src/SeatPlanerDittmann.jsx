@@ -83,6 +83,7 @@ export default function SeatPlaner() {
     const [seats, setSeats] = useState(INITIAL_SEATS);
     const [students, setStudents] = useState([]);
     const [assignments, setAssignments] = useState({});
+    const [unassignedStudents, setUnassignedStudents] = useState([]);
 
     const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -94,22 +95,52 @@ export default function SeatPlaner() {
     const [resizing, setResizing] = useState(null); // { roomId, handle, startX, startY, startW, startH, startRoomX, startRoomY }
     const [printMode, setPrintMode] = useState(false);
 
+    const [isLoaded, setIsLoaded] = useState(false);
+
     // --- Persistence ---
     useEffect(() => {
-        const savedData = localStorage.getItem('dittmann_seatplaner_v2');
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            setRooms(data.rooms || []);
-            setSeats(data.seats || []);
-            setStudents(data.students || []);
-            setAssignments(data.assignments || {});
-        }
+        const loadData = async () => {
+            try {
+                const response = await fetch('/api/data');
+                if (response.ok) {
+                    const data = await response.json();
+                    // Only update state if we got valid data back
+                    if (data) {
+                        setRooms(data.rooms || []);
+                        setSeats(data.seats || []);
+                        setStudents(data.students || []);
+                        setAssignments(data.assignments || {});
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load data:", error);
+            } finally {
+                setIsLoaded(true);
+            }
+        };
+        loadData();
     }, []);
 
     useEffect(() => {
-        const data = { rooms, seats, students, assignments };
-        localStorage.setItem('dittmann_seatplaner_v2', JSON.stringify(data));
-    }, [rooms, seats, students, assignments]);
+        if (!isLoaded) return;
+
+        const saveData = async () => {
+            const data = { rooms, seats, students, assignments };
+            try {
+                await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } catch (error) {
+                console.error("Failed to save data:", error);
+            }
+        };
+
+        // Debounce save
+        const timeoutId = setTimeout(saveData, 1000);
+        return () => clearTimeout(timeoutId);
+    }, [rooms, seats, students, assignments, isLoaded]);
 
     // --- Logic: Room & Seat Management ---
 
@@ -203,10 +234,7 @@ export default function SeatPlaner() {
         });
 
         setAssignments(prev => ({ ...prev, [dateKey]: newDayAssignments }));
-
-        if (unassignedStudents.length > 0) {
-            alert(`${unassignedStudents.length} Studenten ohne Platz.`);
-        }
+        setUnassignedStudents(unassignedStudents);
     };
 
     const clearDay = () => {
@@ -216,12 +244,14 @@ export default function SeatPlaner() {
             delete next[dateKey];
             return next;
         });
+        setUnassignedStudents([]);
     };
 
     const changeDate = (offset) => {
         const newDate = new Date(currentDate);
         newDate.setDate(newDate.getDate() + offset);
         setCurrentDate(newDate);
+        setUnassignedStudents([]); // Clear conflicts when changing date
     };
 
     // --- Handlers ---
@@ -550,8 +580,8 @@ export default function SeatPlaner() {
                                         onClick={() => assignStudent(student.id)}
                                         disabled={isAssignedHere}
                                         className={`w-full text-left p-2 rounded border flex justify-between items-center ${isAssignedHere
-                                                ? 'bg-green-50 border-green-200 text-green-800 cursor-default'
-                                                : 'hover:bg-blue-50 hover:border-blue-300'
+                                            ? 'bg-green-50 border-green-200 text-green-800 cursor-default'
+                                            : 'hover:bg-blue-50 hover:border-blue-300'
                                             }`}
                                     >
                                         <span>{student.name}</span>
@@ -921,7 +951,18 @@ export default function SeatPlaner() {
                                 <h3 className="font-bold mb-2 text-gray-700 flex items-center">
                                     <AlertTriangle size={16} className="mr-2 text-orange-500" /> Konflikte
                                 </h3>
-                                <p className="text-sm text-gray-500">Keine Konflikte erkannt.</p>
+                                {unassignedStudents.length > 0 ? (
+                                    <div className="text-sm text-red-600">
+                                        <p className="font-bold mb-1">{unassignedStudents.length} Studenten ohne Platz:</p>
+                                        <ul className="list-disc pl-4">
+                                            {unassignedStudents.map(s => (
+                                                <li key={s.id}>{s.name}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-500">Keine Konflikte erkannt.</p>
+                                )}
                             </div>
 
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">

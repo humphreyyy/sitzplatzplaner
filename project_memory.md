@@ -24,7 +24,9 @@
 -   **Styling**: Tailwind CSS (inferred from class names like `p-6`, `bg-white`, `text-blue-600`).
 -   **Icons**: `lucide-react`.
 -   **State Management**: Local `useState` hooks.
--   **Persistence**: `localStorage` (Key: `dittmann_seatplaner_v2`).
+-   **Persistence**: File-based (`data.json`) via local Node.js/Express server (Port 3001).
+    -   Frontend proxies `/api` requests to backend.
+    -   Data is auto-saved on change (debounced).
 
 ## Data Model
 
