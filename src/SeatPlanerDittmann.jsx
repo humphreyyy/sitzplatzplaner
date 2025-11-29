@@ -79,7 +79,7 @@ const getISOString = (date) => date.toISOString().split('T')[0];
 
 export default function SeatPlaner() {
     // --- State ---
-    const [activeTab, setActiveTab] = useState('plan'); // 'editor', 'students', 'plan'
+    const [activeTab, setActiveTab] = useState('plan'); // 'editor', 'students', 'plan', 'week'
     const [rooms, setRooms] = useState(INITIAL_ROOMS);
     const [seats, setSeats] = useState(INITIAL_SEATS);
     const [students, setStudents] = useState([]);
@@ -247,6 +247,26 @@ export default function SeatPlaner() {
         const newDate = new Date(currentDate);
         newDate.setDate(newDate.getDate() + offset);
         setCurrentDate(newDate);
+    };
+
+    const changeWeek = (offset) => {
+        const newDate = new Date(currentDate);
+        newDate.setDate(newDate.getDate() + (offset * 7));
+        setCurrentDate(newDate);
+    };
+
+    const getWeekRange = (date) => {
+        const current = new Date(date);
+        const day = current.getDay();
+        const diff = current.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+        const monday = new Date(current.setDate(diff));
+        const week = [];
+        for (let i = 0; i < 5; i++) {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            week.push(d);
+        }
+        return week;
     };
 
     // --- Handlers ---
@@ -799,7 +819,7 @@ export default function SeatPlaner() {
                             ))}
                             {students.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="p-8 text-center text-gray-400">Keine Studenten eingetragen.</td>
+                                    <td colSpan={7} className="p-4 text-center text-gray-400">Keine Studenten angelegt.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -808,6 +828,108 @@ export default function SeatPlaner() {
             </div>
         </div>
     );
+
+    const renderWeekView = () => {
+        const weekDates = getWeekRange(currentDate);
+        const monday = weekDates[0];
+        const friday = weekDates[4];
+
+        return (
+            <div className="flex flex-col h-full bg-gray-50">
+                {/* Week Navigation */}
+                <div className="bg-white border-b p-4 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center space-x-4">
+                        <button onClick={() => changeWeek(-1)} className="p-2 hover:bg-gray-100 rounded-full">
+                            <ChevronLeft size={24} />
+                        </button>
+                        <div className="text-xl font-bold text-gray-800 flex items-center">
+                            <Calendar className="mr-2" size={24} />
+                            {monday.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })} - {friday.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </div>
+                        <button onClick={() => changeWeek(1)} className="p-2 hover:bg-gray-100 rounded-full">
+                            <ChevronRight size={24} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Week Table */}
+                <div className="flex-1 overflow-auto p-6">
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-100 text-gray-700">
+                                    <th className="p-4 border-b font-bold sticky top-0 bg-gray-100 z-10">Student</th>
+                                    {weekDates.map((date, index) => (
+                                        <th key={index} className="p-4 border-b font-bold sticky top-0 bg-gray-100 z-10 w-1/6">
+                                            <div className="flex flex-col">
+                                                <span>{WEEKDAYS[index].label}</span>
+                                                <span className="text-xs font-normal text-gray-500">
+                                                    {date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                                                </span>
+                                            </div>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {students.map(student => (
+                                    <tr key={student.id} className="border-b hover:bg-gray-50">
+                                        <td className="p-4 font-medium border-r bg-white sticky left-0 z-10">{student.name}</td>
+                                        {weekDates.map((date, index) => {
+                                            const dayKey = WEEKDAYS[index].key;
+                                            const dateKey = getISOString(date);
+                                            const isPresent = student.days && student.days.includes(dayKey);
+
+                                            // Find assignment
+                                            let assignedRoomName = null;
+                                            let assignedSeatId = null;
+
+                                            if (assignments[dateKey]) {
+                                                // assignments[dateKey] is { seatId: studentId }
+                                                // We need to find the seatId for this student
+                                                assignedSeatId = Object.keys(assignments[dateKey]).find(
+                                                    sid => assignments[dateKey][sid] === student.id
+                                                );
+
+                                                if (assignedSeatId) {
+                                                    const seat = seats.find(s => s.id === assignedSeatId);
+                                                    if (seat) {
+                                                        const room = rooms.find(r => r.id === seat.roomId);
+                                                        assignedRoomName = room ? room.name : 'Unbekannter Raum';
+                                                    }
+                                                }
+                                            }
+
+                                            return (
+                                                <td key={index} className={`p-4 border-r last:border-r-0 ${!isPresent ? 'bg-gray-100 text-gray-400' : ''}`}>
+                                                    {!isPresent ? (
+                                                        <span className="text-xs italic">-</span>
+                                                    ) : (
+                                                        assignedRoomName ? (
+                                                            <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium border border-blue-200">
+                                                                {assignedRoomName}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-red-400 text-sm italic">Nicht zugewiesen</span>
+                                                        )
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                ))}
+                                {students.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="p-8 text-center text-gray-400">Keine Studenten vorhanden.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     const renderPrintView = () => {
         const dateKey = getISOString(currentDate);
@@ -866,169 +988,162 @@ export default function SeatPlaner() {
     if (printMode) return renderPrintView();
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col">
-            {/* Header */}
-            <header className="text-white shadow-lg" style={{ backgroundColor: COLORS.primary }}>
-                <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-white rounded flex items-center justify-center font-bold text-xl" style={{ color: COLORS.primary }}>D</div>
-                        <h1 className="text-xl font-bold tracking-wide">SeatPlaner <span className="font-light opacity-80">Dittmann</span></h1>
-                    </div>
-                    <nav className="flex space-x-1 bg-white/10 rounded-lg p-1">
-                        {[
-                            { id: 'plan', icon: Calendar, label: 'Wochenplan' },
-                            { id: 'students', icon: Users, label: 'Studenten' },
-                            { id: 'editor', icon: Layout, label: 'Grundriss' },
-                        ].map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center px-4 py-2 rounded-md transition-all ${activeTab === tab.id ? 'bg-white shadow-sm font-bold' : 'hover:bg-white/20 text-blue-100'}`}
-                                style={{ color: activeTab === tab.id ? COLORS.primary : undefined }}
-                            >
-                                <tab.icon size={18} className="mr-2" /> {tab.label}
-                            </button>
-                        ))}
-                    </nav>
+        <div className="flex h-screen bg-gray-100 font-sans text-gray-800">
+            {/* Sidebar Navigation */}
+            <div className="w-20 bg-white shadow-lg flex flex-col items-center py-6 z-20 space-y-4">
+                <div className="mb-4 p-2 bg-blue-50 rounded-lg">
+                    <Layout size={32} style={{ color: COLORS.primary }} />
                 </div>
-            </header>
+
+                <NavButton icon={Calendar} label="Plan" active={activeTab === 'plan'} onClick={() => setActiveTab('plan')} />
+                <NavButton icon={Layout} label="Woche" active={activeTab === 'week'} onClick={() => setActiveTab('week')} />
+                <NavButton icon={Users} label="Studenten" active={activeTab === 'students'} onClick={() => setActiveTab('students')} />
+                <NavButton icon={Settings} label="Editor" active={activeTab === 'editor'} onClick={() => setActiveTab('editor')} />
+
+                <div className="flex-grow" />
+
+                <NavButton icon={Save} label="Speichern" onClick={() => {
+                    saveData({ rooms, seats, students, assignments })
+                        .then(() => alert('Gespeichert!'))
+                        .catch(err => alert('Fehler beim Speichern: ' + err));
+                }} />
+            </div>
 
             {/* Main Content */}
-            <main className="flex-1 container mx-auto p-4">
-
-                {/* VIEW: PLANUNG */}
+            <div className="flex-1 flex flex-col overflow-hidden relative">
                 {activeTab === 'plan' && (
-                    <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="lg:w-3/4 flex flex-col gap-4">
-                            {/* Toolbar */}
-                            <div className="bg-white p-4 rounded-lg shadow-sm flex flex-wrap justify-between items-center gap-4">
-                                <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                                    <button onClick={() => changeDate(-1)} className="p-2 hover:bg-white rounded shadow-sm"><ChevronLeft size={20} /></button>
-                                    <div className="px-4 font-bold min-w-[200px] text-center">
-                                        {formatDate(currentDate)}
-                                    </div>
-                                    <button onClick={() => changeDate(1)} className="p-2 hover:bg-white rounded shadow-sm"><ChevronRight size={20} /></button>
+                    <>
+                        {/* Header */}
+                        <div className="bg-white h-16 border-b flex items-center justify-between px-6 shadow-sm z-10">
+                            <div className="flex items-center space-x-4">
+                                <button onClick={() => changeDate(-1)} className="p-2 hover:bg-gray-100 rounded-full">
+                                    <ChevronLeft size={24} />
+                                </button>
+                                <div className="text-xl font-bold text-gray-800 flex items-center">
+                                    <Calendar className="mr-2" size={24} />
+                                    {formatDate(currentDate)}
                                 </div>
-
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={autoAssignSeats}
-                                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition shadow"
-                                        style={{ backgroundColor: COLORS.primary }}
-                                    >
-                                        <RefreshCw size={18} className="mr-2" /> Auto-Zuteilung
-                                    </button>
-                                    <button
-                                        onClick={clearDay}
-                                        className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition shadow-sm"
-                                    >
-                                        <RotateCcw size={18} className="mr-2" /> Leeren
-                                    </button>
-                                    <button
-                                        onClick={() => setPrintMode(true)}
-                                        className="flex items-center px-4 py-2 text-white rounded transition shadow ml-2"
-                                        style={{ backgroundColor: COLORS.accent }}
-                                    >
-                                        <Download size={18} className="mr-2" /> PDF
-                                    </button>
-                                </div>
+                                <button onClick={() => changeDate(1)} className="p-2 hover:bg-gray-100 rounded-full">
+                                    <ChevronRight size={24} />
+                                </button>
+                                <button onClick={() => setCurrentDate(new Date())} className="text-sm text-blue-600 hover:underline ml-2">
+                                    Heute
+                                </button>
                             </div>
 
+                            <div className="flex items-center space-x-3">
+                                <button
+                                    onClick={autoAssignSeats}
+                                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+                                >
+                                    <RefreshCw size={18} className="mr-2" /> Auto-Zuweisung
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (confirm('Möchten Sie wirklich alle Zuweisungen für diesen Tag löschen?')) {
+                                            clearDay();
+                                        }
+                                    }}
+                                    className="flex items-center px-4 py-2 bg-white text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
+                                >
+                                    <Trash2 size={18} className="mr-2" /> Leeren
+                                </button>
+                                <button
+                                    onClick={() => window.print()}
+                                    className="p-2 text-gray-600 hover:bg-gray-100 rounded"
+                                    title="Drucken"
+                                >
+                                    <Printer size={20} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Workspace */}
+                        <div className="flex-1 flex overflow-hidden">
                             {/* Floor Plan Area */}
-                            <div className="bg-white p-1 rounded-lg shadow-lg border border-gray-200">
-                                {renderFloorPlan()}
-                            </div>
-                        </div>
-
-                        {/* Sidebar: Properties & Info */}
-                        <div className="lg:w-1/4 flex flex-col gap-4">
-                            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                                <h3 className="font-bold mb-2 text-gray-700 flex items-center">
-                                    <AlertTriangle size={16} className="mr-2 text-orange-500" /> Konflikte
-                                </h3>
-                                <p className="text-sm text-gray-500">Keine Konflikte erkannt.</p>
-                            </div>
-
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                                {renderPropertiesPanel()}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* VIEW: STUDENTEN */}
-                {activeTab === 'students' && renderStudentManager()}
-
-                {/* VIEW: EDITOR */}
-                {activeTab === 'editor' && (
-                    <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="lg:w-3/4">
-                            <div className="bg-white p-4 rounded-lg shadow-sm mb-4 flex justify-between items-center">
-                                <h2 className="font-bold text-lg flex items-center">
-                                    <Layout size={20} className="mr-2" /> Layout-Editor
-                                </h2>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => {
-                                            setNewRoomName('');
-                                            setShowAddRoomModal(true);
-                                        }}
-                                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium"
-                                    >
-                                        + Raum
-                                    </button>
+                            <div className="flex-1 relative bg-gray-100 overflow-hidden flex flex-col">
+                                <div className="flex-1 overflow-auto p-8 flex items-center justify-center">
+                                    <div className="shadow-2xl bg-white">
+                                        {renderFloorPlan(true)}
+                                    </div>
                                 </div>
                             </div>
-                            <div className="bg-white p-1 rounded-lg shadow-lg border-2 border-blue-100">
-                                {renderFloorPlan()}
-                            </div>
-                        </div>
 
-                        <div className="lg:w-1/4">
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                            {/* Sidebar Properties */}
+                            <div className="w-80 bg-white border-l shadow-xl z-20 overflow-y-auto">
                                 {renderPropertiesPanel()}
                             </div>
                         </div>
+                    </>
+                )}
 
+                {activeTab === 'week' && renderWeekView()}
+
+                {activeTab === 'editor' && (
+                    <div className="flex-1 flex flex-col h-full">
+                        <div className="bg-white h-16 border-b flex items-center justify-between px-6 shadow-sm">
+                            <h2 className="text-xl font-bold flex items-center">
+                                <Settings className="mr-2" /> Editor-Modus
+                            </h2>
+                            <button
+                                onClick={() => setShowAddRoomModal(true)}
+                                className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm"
+                            >
+                                <Plus size={18} className="mr-2" /> Raum hinzufügen
+                            </button>
+                        </div>
+                        <div className="flex-1 flex overflow-hidden">
+                            <div className="flex-1 overflow-auto p-8 relative bg-gray-100">
+                                <div className="min-w-[800px] min-h-[600px] bg-white shadow-xl mx-auto relative" style={{ width: '100%', height: '100%' }}>
+                                    {renderFloorPlan(false)}
+                                </div>
+                            </div>
+                            <div className="w-80 bg-white border-l shadow-xl z-20 overflow-y-auto">
+                                {renderPropertiesPanel()}
+                            </div>
+                        </div>
                     </div>
                 )}
 
-            </main>
+                {activeTab === 'students' && (
+                    <div className="flex-1 overflow-auto bg-gray-50">
+                        {renderStudentManager()}
+                    </div>
+                )}
+            </div>
 
-            {/* Add Room Modal */}
+            {/* Modals */}
             {showAddRoomModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-xl w-96">
-                        <h3 className="font-bold text-lg mb-4">Neuen Raum hinzufügen</h3>
+                        <h3 className="text-lg font-bold mb-4">Neuen Raum hinzufügen</h3>
                         <input
-                            autoFocus
                             type="text"
                             value={newRoomName}
-                            onChange={e => setNewRoomName(e.target.value)}
-                            placeholder="Raumname (z.B. Büro 101)"
-                            className="border p-2 rounded w-full mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
-                            onKeyDown={e => {
-                                if (e.key === 'Enter') {
-                                    if (newRoomName.trim()) {
-                                        setRooms([...rooms, { id: generateId(), x: 50, y: 50, w: 200, h: 150, name: newRoomName, seatCount: 0 }]);
-                                        setNewRoomName('');
-                                        setShowAddRoomModal(false);
-                                    }
-                                }
-                                if (e.key === 'Escape') setShowAddRoomModal(false);
-                            }}
+                            onChange={(e) => setNewRoomName(e.target.value)}
+                            placeholder="Raum Name"
+                            className="w-full p-2 border rounded mb-4"
+                            autoFocus
                         />
-                        <div className="flex justify-end gap-2">
-                            <button 
-                                onClick={() => setShowAddRoomModal(false)} 
+                        <div className="flex justify-end space-x-2">
+                            <button
+                                onClick={() => setShowAddRoomModal(false)}
                                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
                             >
                                 Abbrechen
                             </button>
-                            <button 
+                            <button
                                 onClick={() => {
-                                    if (newRoomName.trim()) {
-                                        setRooms([...rooms, { id: generateId(), x: 50, y: 50, w: 200, h: 150, name: newRoomName, seatCount: 0 }]);
+                                    if (newRoomName) {
+                                        setRooms([...rooms, {
+                                            id: generateId(),
+                                            x: 100,
+                                            y: 100,
+                                            w: 200,
+                                            h: 150,
+                                            name: newRoomName,
+                                            seatCount: 0
+                                        }]);
                                         setNewRoomName('');
                                         setShowAddRoomModal(false);
                                     }
@@ -1044,3 +1159,14 @@ export default function SeatPlaner() {
         </div>
     );
 }
+
+const NavButton = ({ icon: Icon, label, active, onClick }) => (
+    <button
+        onClick={onClick}
+        className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all ${active ? 'bg-blue-100 text-blue-800 shadow-inner' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+            }`}
+    >
+        <Icon size={24} className="mb-1" />
+        <span className="text-[10px] font-medium">{label}</span>
+    </button>
+);
