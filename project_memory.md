@@ -21,10 +21,27 @@
 
 ## Technical Architecture
 -   **Framework**: React (Functional Component).
--   **Styling**: Tailwind CSS (inferred from class names like `p-6`, `bg-white`, `text-blue-600`).
+-   **Styling**: Tailwind CSS.
 -   **Icons**: `lucide-react`.
--   **State Management**: Local `useState` hooks.
--   **Persistence**: `localStorage` (Key: `dittmann_seatplaner_v2`).
+-   **State Management**: Custom Hooks (`useSeatPlan`, `useStudents`, `useSelection`).
+-   **Persistence**: `localStorage` (Key: `dittmann_seatplaner_v2`) via `apiService`.
+
+## Project Structure
+-   `src/SeatPlanerDittmann.jsx`: Main application entry point and layout.
+-   `src/components/`: UI Components.
+    -   `FloorPlan.jsx`: Canvas for rooms and seats.
+    -   `Room.jsx`: Individual room component.
+    -   `Seat.jsx`: Individual seat component.
+    -   `PropertiesPanel.jsx`: Sidebar for editing properties.
+    -   `StudentManager.jsx`: Student list and attendance management.
+    -   `WeekView.jsx`: Weekly overview.
+    -   `PrintView.jsx`: Print-optimized view.
+-   `src/hooks/`: Custom React Hooks.
+    -   `useSeatPlan.js`: Manages rooms, seats, assignments logic.
+    -   `useStudents.js`: Manages student data.
+    -   `useSelection.js`: Manages selection state.
+-   `src/utils/helpers.js`: Helper functions (`generateId`, `formatDate`, etc.).
+-   `src/constants/index.js`: Constants (`COLORS`, `WEEKDAYS`, etc.).
 
 ## Data Model
 
@@ -73,8 +90,3 @@
 ## Key Algorithms
 -   **`autoAssignSeats`**: Iterates through present students for the current day. If not already assigned, finds the first available free seat and assigns it. Alerts if students are left without seats.
 -   **`handleRoomUpdate`**: When seat count changes, automatically adds or removes seats in a grid layout within the room.
-
-## Color Palette
--   **Primary**: `#1e3a5f` (Dittmann Blue)
--   **Accent**: `#e31e24` (Warning Red)
--   **Selection**: `#2563eb`
