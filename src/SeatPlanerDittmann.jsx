@@ -10,6 +10,7 @@ import {
     ChevronRight,
     RefreshCw,
     Settings,
+    AlertTriangle,
     Trash2
 } from 'lucide-react';
 import { fetchData, saveData } from './apiService';
@@ -40,6 +41,7 @@ export default function SeatPlaner() {
         rooms, setRooms,
         seats, setSeats,
         assignments, setAssignments,
+        unassignedStudents, setUnassignedStudents,
         handleRoomUpdate,
         handleSeatUpdate,
         autoAssignSeats,
@@ -101,6 +103,7 @@ export default function SeatPlaner() {
         const newDate = new Date(currentDate);
         newDate.setDate(newDate.getDate() + offset);
         setCurrentDate(newDate);
+        setUnassignedStudents([]);
     };
 
     const changeWeek = (offset) => {
@@ -245,6 +248,21 @@ export default function SeatPlaner() {
 
                             {/* Sidebar Properties */}
                             <div className="w-80 bg-white border-l shadow-xl z-20 overflow-y-auto">
+                                {unassignedStudents.length > 0 && (
+                                    <div className="p-4 border-b bg-orange-50">
+                                        <h3 className="font-bold mb-2 text-gray-700 flex items-center">
+                                            <AlertTriangle size={16} className="mr-2 text-orange-500" /> Konflikte
+                                        </h3>
+                                        <div className="text-sm text-red-600">
+                                            <p className="font-bold mb-1">{unassignedStudents.length} Studenten ohne Platz:</p>
+                                            <ul className="list-disc pl-4">
+                                                {unassignedStudents.map(s => (
+                                                    <li key={s.id}>{s.name}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                )}
                                 <PropertiesPanel
                                     selectedId={selectedId}
                                     selectionType={selectionType}

@@ -3,9 +3,7 @@ import { generateId, getISOString, getDayKey } from '../utils/helpers';
 import { INITIAL_ROOMS, INITIAL_SEATS } from '../constants';
 
 export const useSeatPlan = () => {
-    const [rooms, setRooms] = useState(INITIAL_ROOMS);
-    const [seats, setSeats] = useState(INITIAL_SEATS);
-    const [assignments, setAssignments] = useState({});
+    const [unassignedStudents, setUnassignedStudents] = useState([]);
 
     const handleRoomUpdate = (id, field, value) => {
         if (field === 'seatCount') {
@@ -79,7 +77,7 @@ export const useSeatPlan = () => {
             }
         });
 
-        const unassignedStudents = [];
+        const unassigned = [];
 
         presentStudents.forEach(student => {
             const alreadySeated = Object.values(newDayAssignments).includes(student.id);
@@ -90,15 +88,12 @@ export const useSeatPlan = () => {
             if (freeSeat) {
                 newDayAssignments[freeSeat] = student.id;
             } else {
-                unassignedStudents.push(student);
+                unassigned.push(student);
             }
         });
 
         setAssignments(prev => ({ ...prev, [dateKey]: newDayAssignments }));
-
-        if (unassignedStudents.length > 0) {
-            alert(`${unassignedStudents.length} Studenten ohne Platz.`);
-        }
+        setUnassignedStudents(unassigned);
     };
 
     const clearDay = (currentDate) => {
@@ -108,6 +103,7 @@ export const useSeatPlan = () => {
             delete next[dateKey];
             return next;
         });
+        setUnassignedStudents([]);
     };
 
     const assignStudentToSeat = (dateKey, seatId, studentId) => {
@@ -127,6 +123,8 @@ export const useSeatPlan = () => {
         setSeats,
         assignments,
         setAssignments,
+        unassignedStudents,
+        setUnassignedStudents,
         handleRoomUpdate,
         handleSeatUpdate,
         toggleSeatFeature,
