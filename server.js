@@ -13,6 +13,7 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increase limit for large data
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // Helper to ensure data file exists
 const ensureDataFile = async () => {
@@ -52,6 +53,11 @@ app.post('/api/data', async (req, res) => {
         console.error('Error writing data:', error);
         res.status(500).json({ error: 'Failed to save data' });
     }
+});
+
+// Handle SPA routing - return index.html for all other routes
+app.get(/(.*)/, (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(PORT, () => {

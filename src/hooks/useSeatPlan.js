@@ -3,6 +3,9 @@ import { generateId, getISOString, getDayKey } from '../utils/helpers';
 import { INITIAL_ROOMS, INITIAL_SEATS } from '../constants';
 
 export const useSeatPlan = () => {
+    const [rooms, setRooms] = useState(INITIAL_ROOMS);
+    const [seats, setSeats] = useState(INITIAL_SEATS);
+    const [assignments, setAssignments] = useState({});
     const [unassignedStudents, setUnassignedStudents] = useState([]);
 
     const handleRoomUpdate = (id, field, value) => {
