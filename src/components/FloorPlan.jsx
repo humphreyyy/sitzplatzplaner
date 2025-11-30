@@ -31,6 +31,13 @@ const FloorPlan = ({
     );
     const minHeight = Math.max(500, contentHeight + 100);
 
+    const contentWidth = Math.max(
+        ...rooms.map(r => r.x + r.w),
+        ...seats.map(s => s.x + 60),
+        0
+    );
+    const minWidth = Math.max(800, contentWidth + 100);
+
     // --- Drag & Drop Handlers ---
 
     const handleDragStart = (e, type, item) => {
@@ -147,7 +154,7 @@ const FloorPlan = ({
     return (
         <div
             className="relative bg-white border-2 border-gray-200 overflow-hidden shadow-inner"
-            style={{ width: '100%', height: '100%', minHeight: `${minHeight}px`, cursor: readOnly ? 'default' : 'default' }}
+            style={{ width: '100%', height: '100%', minHeight: `${minHeight}px`, minWidth: `${minWidth}px`, cursor: readOnly ? 'default' : 'default' }}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onClick={() => {
